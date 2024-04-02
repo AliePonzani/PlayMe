@@ -55,6 +55,19 @@ export async function listarTimes() {
     return linhas;
 }
 
+export async function deletarTime(id, time) {
+    try {
+        let comando = `DELETE FROM CriarTime WHERE idTime = ?`
+        let resp = await con.query(comando, [id]);
+        if (resp[0].affectedRows !== 1) {
+          throw new Error('Erro ao deletar time!');
+        }
+        return time;
+      } catch (error) {
+        throw error;
+      }
+}
+
 export async function listarModalidades() {
     let comando = `
     SELECT * FROM modalidade

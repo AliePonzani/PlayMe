@@ -15,6 +15,8 @@ servidor.get('/time', async (req, resp) => {
     resp.send(listaTimes);
 })
 
+
+
 servidor.get('/modalidade', async (req, resp) => {
     let listaModalidades = await listarModalidades();
     resp.send(listaModalidades);
