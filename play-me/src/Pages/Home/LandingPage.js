@@ -11,14 +11,17 @@ import 'react-toastify/dist/ReactToastify.css';
 
 
 export default function LandingPage() {
-    const { usuario } = useContext(UserContext);
+    const { usuario, listaTimes } = useContext(UserContext);
     const categorias = [
+        'Iniciante - Misto',
         'Iniciante - Feminino',
         'Iniciante - Masculino',
         'Iniciante - Infantil',
+        'Intermediario - Misto',
         'Intermediario - Feminino',
         'Intermediario - Masculino',
         'Intermediario - Infantil',
+        'Profissional - Misto',
         'Profissional - Feminino',
         'Profissional - Masculino',
         'Profissional - Infantil'
@@ -48,12 +51,32 @@ export default function LandingPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         if (usuario && usuario.id) {
-            const verificarCampos = (formData) => {
-                return Object.values(formData).every(value => value !== null && value !== undefined && value !== '');
+            console.log();
+            dadosFormulario.registrador = usuario.id
+            let msg = ''
+            const verificarCampos = (dadosFormulario) => {
+                if (dadosFormulario.max_participantes < 1) {
+                    msg = "A quantidade de jogadores deve ser maior que 0!"
+                    return false;
+                } else {
+                    const verificar = Object.values(dadosFormulario).every(value =>
+                        value !== null &&
+                        value !== undefined &&
+                        value !== '' &&
+                        (typeof value === 'string' ? value.trim() !== '' : true)
+                    );
+                    if (!verificar) {
+                        msg = "Todos os campos devem ser preenchidos!";
+                        return false;
+                    } else {
+                        return true;
+                    }
+                }
             };
             if (!verificarCampos(dadosFormulario)) {
-                toast.error("Todos os campos devem ser preenchidos!");
+                toast.error(msg);
                 return;
             } else {
                 try {
@@ -61,10 +84,10 @@ export default function LandingPage() {
                     delete dadosFormulario.hora;
                     const body = {
                         ...dadosFormulario,
-                        registrador: usuario.id,
                         data: data
                     };
                     await salvar('time', body);
+                    listaTimes(usuario.id);
                     setDadosFormulario({
                         modalidade: '',
                         registrador: '',
@@ -156,7 +179,7 @@ export default function LandingPage() {
                                 sx={{ height: '30px' }}
                             >
                                 <MenuItem value="">
-                                    <em>None</em>
+                                    <em>---Selecionar---</em>
                                 </MenuItem>
                                 {modalidades.map(modalidade => (
                                     <MenuItem key={modalidade.id} value={modalidade.modalidade}>{modalidade.modalidade}</MenuItem>
@@ -174,7 +197,7 @@ export default function LandingPage() {
                                 sx={{ height: '30px' }}
                             >
                                 <MenuItem value="">
-                                    <em>None</em>
+                                    <em>---Selecionar---</em>
                                 </MenuItem>
                                 {categorias.map((categoria, item) => (
                                     <MenuItem key={item} value={categoria}>{categoria}</MenuItem>

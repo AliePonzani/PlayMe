@@ -8,13 +8,14 @@ import 'react-toastify/dist/ReactToastify.css';
 import CardTime from "../../Components/CardTime/CardTime";
 
 export default function PaginaUsuario() {
-    const { usuario, timesQueParticipo } = useContext(UserContext);
+    const { usuario, timesQueParticipo, listaTimes } = useContext(UserContext);
     const [meusTimes, setMeusTimes] = useState([]);
 
 
     useEffect(() => {
         const timesCriados = async () => {
             const idUsuario = usuario.id;
+            listaTimes(idUsuario);
             const resultadoTimes = await listarTimesUsuario(idUsuario);
             setMeusTimes(resultadoTimes);
         }

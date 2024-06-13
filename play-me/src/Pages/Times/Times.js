@@ -101,6 +101,7 @@ export default function Times() {
                             <div>Local: {time.endereco}</div>
                             <div>Data: {formatDate(time.data).date}</div>
                             <div>Hora: {formatDate(time.data).hora}</div>
+                            <div>Categoria: {time.categoria}</div>
                             <div>{time.informacoes}</div>
                             <div className="qtdJogadores">
                                 <div>Qtd. de jogadores até o momento</div>
