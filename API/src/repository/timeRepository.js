@@ -1,102 +1,129 @@
-import con from "./conection.js";
+import con from "../conection.js";
+import { deletarParticipante, listarParticipantesPorTime } from "./participanteRepository.js";
 
 export async function novoTime(time) {
-    let comando = `
-        insert into CriarTime (
-            IdUsuario, 
-            modalidade, 
-            categoria, 
-            subcategoria, 
-            idadeMin, 
-            idadeMax, 
-            local, 
-            dataJogo, 
-            horaJogo, 
-            qtdJogadores)
-        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `
+    try {
+        let comando = `
+            insert into time (
+                modalidade, 
+                registrador_id, 
+                endereco, 
+                data, 
+                categoria, 
+                informacoes, 
+                max_participantes, 
+                participantes_atual
+                )
+            values (?, ?, ?, ?, ?, ?, ?, ?)`
 
-    let resp = await con.query(comando, [time.idUsuario, time.modalidade, time.categoria, time.subcategoria, time.idadeMin, time.idadeMax, time.local, time.dataJogo, time.horaJogo, time.qtdJogadores])
-    let info = resp[0];
-
-    time.id = info.insertId;
-    return time;
+        let [resp] = await con.query(comando, [
+            time.modalidade,
+            time.registrador,
+            time.endereco,
+            time.data,
+            time.categoria,
+            time.informacoes,
+            time.max_participantes,
+            time.participantes_atual
+        ])
+        time.id = resp.insertId;
+        return time;
+    } catch (error) {
+        if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+            throw new Error('O ID do registrador é inválido.');
+        }
+        throw error;
+    }
 }
 
 export async function listarTimes() {
-    let comando = `
-    SELECT 
-        c.IdTime,
-        u.nomeUser AS Criado_Por,
-        m.nomeModalidade AS Modalidade,
-        cat.nomeCategoria AS Categoria,
-        sub.nomeSubcategoria AS Subcategoria,
-        c.idadeMin,
-        c.idadeMax,
-        c.local,
-        DATE_FORMAT(c.dataJogo, '%d/%m/%Y') AS dataJogo,
-        c.horaJogo,
-        c.qtdJogadores
-    FROM 
-        CriarTime c
-    JOIN 
-        Usuario u ON c.IdUsuario = u.Id
-    JOIN 
-        Modalidade m ON c.modalidade = m.IdModalidade
-    JOIN 
-        Categoria cat ON c.categoria = cat.idCategoria
-    JOIN 
-        Subcategoria sub ON c.subcategoria = sub.idSubcategoria;
-    `
-
-    let resp = await con.query(comando, []);
-    let linhas = resp[0];
-
-    return linhas;
+    try {
+        let comando = `SELECT * FROM time;`
+        let resp = await con.query(comando, []);
+        let linhas = resp[0];
+        return linhas;
+    } catch (error) {
+        throw error;
+    }
 }
 
-export async function deletarTime(id, time) {
+export async function listarTime(id) {
     try {
-        let comando = `DELETE FROM CriarTime WHERE idTime = ?`
+        let comando = `SELECT * FROM time WHERE id = ?;`
+        let resp = await con.query(comando, [id]);
+        let linhas = resp[0];
+        return linhas;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function alterarTime(id, time) {
+    try {
+        let comando = `
+            update time set
+                endereco = ?, 
+                data = ?, 
+                categoria = ?, 
+                informacoes = ?, 
+                max_participantes = ?
+            WHERE id = ?`
+
+        await con.query(comando, [
+            time.endereco,
+            time.data,
+            time.categoria,
+            time.informacoes,
+            time.max_participantes,
+            id
+        ])
+        return time;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function alterarParticipantes(id, valor) {
+    try {
+        let comando = `UPDATE time SET participantes_atual = ? WHERE id = ?;`
+        const resp = await con.query(comando, [
+            valor,
+            id
+        ])
+        return resp;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+}
+
+export async function deletarTime(id) {
+    try {
+
+        console.log('entrou na função deletarTime com o id ' + id);
+
+        const participantes = await listarParticipantesPorTime(id);
+
+        console.log(participantes);
+
+        participantes.forEach(async participante => {
+            console.log('deletando todos os participantes do time ' + id)
+            await deletarParticipante(participante.id);
+        });
+
+        console.log("deletou todos os participantes do time!");
+
+        let comando = `DELETE FROM time WHERE id = ?`
         let resp = await con.query(comando, [id]);
         if (resp[0].affectedRows !== 1) {
-          throw new Error('Erro ao deletar time!');
+            throw new Error('Erro ao deletar time!');
         }
-        return time;
-      } catch (error) {
+        
+        console.log('função deletar funcionou');
+
+        return resp[0];
+    } catch (error) {
         throw error;
-      }
+    }
 }
 
-export async function listarModalidades() {
-    let comando = `
-    SELECT * FROM modalidade
-    `
-
-    let resp = await con.query(comando, []);
-    let linhas = resp[0];
-
-    return linhas;
-}
-
-export async function listarCategorias() {
-    let comando = `
-    SELECT * FROM categoria
-    `
-
-    let resp = await con.query(comando, []);
-    let linhas = resp[0];
-
-    return linhas;
-}
-
-export async function listarSubcategorias() {
-    let comando = `
-    SELECT * FROM subcategoria
-    `
-
-    let resp = await con.query(comando, []);
-    let linhas = resp[0];
-
-    return linhas;
-}

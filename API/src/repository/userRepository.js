@@ -1,8 +1,8 @@
-import con from "./conection.js";
+import con from "../conection.js";
 
 export async function exibirUsuarios() {
   try {
-    let comando = `select * from Usuario`
+    let comando = `select * from usuario`
 
     let resp = await con.query(comando, []);
     let linhas = resp[0];
@@ -15,11 +15,20 @@ export async function exibirUsuarios() {
 
 export async function exibirUsuario(id) {
   try {
-    let comando = `select * from Usuario WHERE id = ?`
-
+    let comando = `select * from usuario WHERE id = ?`
     let resp = await con.query(comando, [id]);
     let linhas = resp[0];
+    return linhas;
+  } catch (error) {
+    throw error;
+  }
+}
 
+export async function buscarUsuarioLogin(email) {
+  try {
+    let comando = `select * from usuario WHERE email = ?`
+    let resp = await con.query(comando, [email]);
+    let linhas = resp[0];
     return linhas;
   } catch (error) {
     throw error;
@@ -27,38 +36,37 @@ export async function exibirUsuario(id) {
 }
 
 export async function novoUsuario(usuario) {
-  let comando = `
-      insert into Usuario (nomeUser, email, sexo, dataNasc) 
-                    values (?, ?, ?, ?)
-    `
-
-  let resp = await con.query(comando, [usuario.nomeUser, usuario.email, usuario.sexo, usuario.dataNasc])
-  let info = resp[0];
-
-  usuario.id = info.insertId;
-  return usuario;
+  try {
+    let comando = `insert into usuario (nome, email, senha) values (?, ?, ?)`
+    let [resp] = await con.query(comando, [usuario.nome, usuario.email, usuario.senha])
+    usuario.id = resp.insertId;
+    return usuario;
+  } catch (error) {
+    if (error.errno === 1062) {
+      throw new Error('EMAIL_JA_EXISTE');
+    }
+    throw error;
+  }
 }
 
 export async function alterarUsuario(id, usuario) {
   try {
     let comando = `
       UPDATE usuario SET
-      nomeUser = ?,
+      nome = ?,
       email = ?,
-      sexo = ?,
-      dataNasc = ?
-      WHERE Id = ?
+      senha = ?
+      WHERE id = ?
     `;
 
-    const [rows, fields] = await con.query(comando, [
-      usuario.nomeUser,
+    const [info] = await con.query(comando, [
+      usuario.nome,
       usuario.email,
-      usuario.sexo,
-      usuario.dataNasc,
+      usuario.senha,
       id
     ]);
 
-    if (rows.affectedRows !== 1) {
+    if (info.affectedRows !== 1) {
       throw new Error('Usuário não encontrado ou não atualizado');
     }
 
@@ -68,26 +76,42 @@ export async function alterarUsuario(id, usuario) {
   }
 }
 
-export async function deletarUsuario(id, usuario) {
+export async function deletarUsuario(id) {
+  console.log('entrou em deletarUsuario');
   try {
     let comando = `DELETE FROM usuario WHERE id = ?`
     let resp = await con.query(comando, [id]);
-    if (resp[0].affectedRows !== 1) {
+    if (resp[0].affectedRows === 0) {
       throw new Error('Erro ao deletar usuário!');
     }
-    return usuario;
+    console.log(resp[0]);
+    return resp[0];
   } catch (error) {
+    console.log(error);
     throw error;
   }
 }
 
 export async function listarTimesUsuario(id) {
   try {
-    let comando = `SELECT idTime from CriarTime WHERE idUsuario = ?`
+    let comando = `SELECT * from time WHERE registrador_id = ?`
     let resp = await con.query(comando, [id]);
     let linhas = resp[0];
 
     return linhas;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function alterarImagem(id, caminho) {
+  try {
+    let comando = `update usuario set imagem = ? where id = ?;`
+    let [resp] = await con.query(comando, [caminho, id]);
+    if (resp.affectedRows !== 1) {
+      throw new Error('Usuário não encontrado ou não atualizado');
+    }
+    return resp.affectedRows;
   } catch (error) {
     throw error;
   }
